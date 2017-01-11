@@ -67,12 +67,14 @@ function downloadRepository($vcs)
 		$url = str_replace('{repository}', $vcs['repository'], $url);
 		$url = str_replace('{branch}', $vcs['branch'], $url);
 
-		echo "\nDownloading " . $url . " ... \n\n";
-
 		$result = getGitHubUrl($url, $vcs['oauth_token']);
 
+		// Move the zip file into the remote folder
+		$newFile = str_replace(APP, APP . 'remote/', $file);
+		rename($file, $newFile);
+
 		$result = [
-			'file' => $file,
+			'file' => $newFile,
 		];
 	}
 
@@ -110,8 +112,7 @@ function unzipRespository($file)
 
 	if (file_exists(APP . 'remote'))
 	{
-		array_map('unlink', glob(APP . "remote/*.*"));
-		rmdir(APP . 'remote');
+		shell_exec('rm -fr ' . APP . "remote/");
 	}
 
 	mkdir(APP . 'remote');
@@ -151,7 +152,7 @@ function getChanges($target, $remote)
  * @param  string $remote  The remote branch folder
  * @return array
  */
-function deploy($config, $changes, $remote)
+function deploy($config, $changes, $remote, $dryRun = true)
 {
 	$timestamp = gmdate('YmdHis');
 
@@ -176,12 +177,19 @@ function deploy($config, $changes, $remote)
 			{
 				$backup = $replacePath . '.' . $timestamp;
 
-				rename($replacePath, $backup);
+				if (!$dryRun)
+				{
+					rename($replacePath, $backup);
+				}
 
 				$stats['backups'][] = $backup;
 			}
 
-			rename($change, $replacePath);
+			if (!$dryRun)
+			{
+				rename($change, $replacePath);
+			}
+
 
 			$stats['replaced'][] = $replacePath;
 		}
@@ -191,7 +199,10 @@ function deploy($config, $changes, $remote)
 
 			$to = $targetPath . $change;
 
-			rename($from, $to);
+			if (!$dryRun)
+			{
+				rename($from, $to);
+			}
 
 			$stats['news'][] = $to;
 		}

@@ -7,19 +7,27 @@ $config = require 'config.php';
 $backups = [];
 $runId = gmdate('YmdHis');
 
+$opts  = [
+	"persist:",
+];
+
+$options = getopt(null, $opts);
+
 try
 {
+	$dryRun = !(array_key_exists('persist', $options) && $options['persist'] === 'true');
+
 	$file = downloadRepository($config['vcs'])['file'];
 
 	$remote = unzipRespository($file);
 
 	$changes = getChanges($config['target']['path'], $remote);
 
-	$stats = deploy($config, $changes, $remote)['stats'];
+	$stats = deploy($config, $changes, $remote, $dryRun)['stats'];
 
-	file_put_contents(APP . $runId, serialize($stats));
+	file_put_contents(APP . 'deploys/' . $runId, serialize($stats));
 
-	echo "Process finished. \n";
+	echo "Process finished. \n\n";
 
 	print_r($stats);
 }
