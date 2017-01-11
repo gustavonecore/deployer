@@ -25,7 +25,7 @@ try
 
 	$stats = deploy($config, $changes, $remote, $dryRun)['stats'];
 
-	file_put_contents(APP . 'deploys/' . $runId, serialize($stats));
+	file_put_contents(APP . 'deploys/' . $runId, serialize($stats) . '.txt');
 
 	echo "Process finished. \n\n";
 
